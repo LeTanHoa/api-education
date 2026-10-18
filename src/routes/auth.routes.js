@@ -1,5 +1,12 @@
 import {Router}from'express';import jwt from'jsonwebtoken';import User from'../models/User.js';
-const router=Router();const access=user=>jwt.sign({sub:user.id,role:user.role},process.env.JWT_ACCESS_SECRET,{expiresIn:'15m'});const refresh=user=>jwt.sign({sub:user.id},process.env.JWT_REFRESH_SECRET,{expiresIn:'7d'});const cookie={httpOnly:true,sameSite:'lax',secure:process.env.NODE_ENV==='production',maxAge:604800000};
+const router=Router();const access=user=>jwt.sign({sub:user.id,role:user.role},process.env.JWT_ACCESS_SECRET,{expiresIn:'15m'});const refresh=user=>jwt.sign({sub:user.id},process.env.JWT_REFRESH_SECRET,{expiresIn:'7d'});const isProd = process.env.NODE_ENV === 'production';
+const cookie = {
+  httpOnly: true,
+  sameSite: isProd ? 'none' : 'lax',
+  secure: isProd,
+  maxAge: 604800000
+};
 router.post('/register',async(req,res,next)=>{try{const user=await User.create(req.body);res.status(201).json({user:{id:user.id,name:user.name,email:user.email,role:user.role}})}catch(e){next(e)}});
 router.post('/login',async(req,res,next)=>{try{const user=await User.findOne({email:req.body.email}).select('+password');if(!user||user.role==='parent'||!await user.verifyPassword(req.body.password))return res.status(401).json({message:'Email hoặc mật khẩu không đúng'});if(!user.active)return res.status(403).json({message:'Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.'});res.cookie('refreshToken',refresh(user),cookie).json({accessToken:access(user),user:{id:user.id,name:user.name,email:user.email,role:user.role,grade:user.grade,baseXP:user.baseXP||0,baseCoins:user.baseCoins||0}})}catch(e){next(e)}});
-router.post('/refresh',async(req,res)=>{try{const token=req.cookies.refreshToken;if(!token)throw Error();const data=jwt.verify(token,process.env.JWT_REFRESH_SECRET);const user=await User.findById(data.sub);if(!user||!user.active||user.role==='parent')throw Error();res.json({accessToken:access(user)})}catch{res.status(401).json({message:'Invalid refresh token'})}});router.post('/logout',(req,res)=>res.clearCookie('refreshToken').status(204).end());export default router;
+router.post('/refresh',async(req,res)=>{try{const token=req.cookies.refreshToken;if(!token)throw Error();const data=jwt.verify(token,process.env.JWT_REFRESH_SECRET);const user=await User.findById(data.sub);if(!user||!user.active||user.role==='parent')throw Error();res.json({accessToken:access(user)})}catch{res.status(401).json({message:'Invalid refresh token'})}});
+router.post('/logout',(req,res)=>res.clearCookie('refreshToken',cookie).status(204).end());export default router;
