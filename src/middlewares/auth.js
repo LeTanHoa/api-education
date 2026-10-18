@@ -1,3 +1,20 @@
-import jwt from'jsonwebtoken';import User from'../models/User.js';
-export async function authenticate(req,res,next){try{const token=req.headers.authorization?.replace('Bearer ','');if(!token)return res.status(401).json({message:'Authentication required'});const payload=jwt.verify(token,process.env.JWT_ACCESS_SECRET);req.user=await User.findById(payload.sub);if(!req.user||!req.user.active||req.user.role==='parent')return res.status(401).json({message:'Account unavailable'});next()}catch{return res.status(401).json({message:'Invalid or expired token'})}}
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
+
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'replace_with_a_long_random_secret';
+
+export async function authenticate(req, res, next) {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ message: 'Authentication required' });
+    const payload = jwt.verify(token, JWT_ACCESS_SECRET);
+    req.user = await User.findById(payload.sub);
+    if (!req.user || !req.user.active || req.user.role === 'parent') {
+      return res.status(401).json({ message: 'Account unavailable' });
+    }
+    next();
+  } catch {
+    return res.status(401).json({ message: 'Invalid or expired token' });
+  }
+}
 export const allowRoles=(...roles)=>(req,res,next)=>roles.includes(req.user.role)?next():res.status(403).json({message:'You do not have permission for this action'});

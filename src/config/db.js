@@ -1,8 +1,30 @@
-import mongoose from'mongoose';
+import mongoose from 'mongoose';
 
-export default async function connectDb(){
-  const uri=process.env.MONGODB_URI;
-  if(!uri)throw new Error('MONGODB_URI is not set. Create server/.env from server/.env.example and provide a MongoDB connection string.');
-  await mongoose.connect(uri);
-  console.log('MongoDB connected');
+const DEFAULT_MONGODB_URI = 'mongodb+srv://bonnbon13052002_db_user:zI9Zj36gmDfMYmFP@cluster0.awzjbrb.mongodb.net/test?appName=Cluster0';
+
+let cachedConnection = null;
+
+export default async function connectDb() {
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
+
+  if (cachedConnection) {
+    return cachedConnection;
+  }
+
+  const uri = process.env.MONGODB_URI || DEFAULT_MONGODB_URI;
+
+  try {
+    cachedConnection = await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 8000,
+      connectTimeoutMS: 10000,
+    });
+    console.log('MongoDB connected successfully');
+    return cachedConnection;
+  } catch (err) {
+    cachedConnection = null;
+    console.error('MongoDB connection error:', err.message);
+    throw err;
+  }
 }

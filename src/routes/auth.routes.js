@@ -1,5 +1,7 @@
 import {Router}from'express';import jwt from'jsonwebtoken';import User from'../models/User.js';
-const router=Router();const access=user=>jwt.sign({sub:user.id,role:user.role},process.env.JWT_ACCESS_SECRET,{expiresIn:'15m'});const refresh=user=>jwt.sign({sub:user.id},process.env.JWT_REFRESH_SECRET,{expiresIn:'7d'});const isProd = process.env.NODE_ENV === 'production';
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'replace_with_a_long_random_secret';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'replace_with_another_long_random_secret';
+const router=Router();const access=user=>jwt.sign({sub:user.id,role:user.role},JWT_ACCESS_SECRET,{expiresIn:'15m'});const refresh=user=>jwt.sign({sub:user.id},JWT_REFRESH_SECRET,{expiresIn:'7d'});const isProd = process.env.NODE_ENV === 'production';
 const cookie = {
   httpOnly: true,
   sameSite: isProd ? 'none' : 'lax',
