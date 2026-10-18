@@ -1,0 +1,2 @@
+import mongoose from'mongoose';
+export default mongoose.model('Lesson',new mongoose.Schema({title:{type:String,required:true,trim:true},subject:{type:String,required:true,trim:true,index:true},grade:{type:Number,min:1,max:5,required:true},description:{type:String,default:''},coverUrl:String,order:Number,status:{type:String,enum:['draft','pending','published','rejected','archived'],default:'draft',index:true},publishedAt:{type:Date,index:true},reviewNote:{type:String,default:''},createdBy:{type:mongoose.Schema.Types.ObjectId,ref:'User',required:true}},{timestamps:true}));
